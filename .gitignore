@@ -1,0 +1,6 @@
+# Entornos virtuales
+.venv/
+venv/
+
+# Archivos de configuración con secretos
+.env
