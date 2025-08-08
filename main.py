@@ -20,7 +20,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict, Mapping
+from typing import Any, Callable, Dict, Mapping, Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
@@ -43,6 +43,7 @@ TOOLS: Mapping[str, Callable[..., Any]] = {
 }
 
 SLIDES_DIR = Path("slides")
+SLIDES_DIR.mkdir(exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # FastAPI App
@@ -74,6 +75,8 @@ class GenerateRequest(BaseModel):
     slides: int = Field(default=6, ge=1, le=20)
     tone: str = Field(default="neutral", example="inspirador")
     images_per_slide: int = Field(default=1, ge=0, le=4)
+    filename: Optional[str] = None
+    notes: Optional[str] = None
 
 class RPCReq(BaseModel):
     jsonrpc: str
@@ -126,6 +129,12 @@ async def generate_deck(req: GenerateRequest, request: Request):
     """Pipeline alto nivel: genera toda la presentación y entrega la ruta."""
     # 1. Guion con el LLM
     script_data = scripts.write_script(req.topic, req.slides, req.tone)
+    if isinstance(script_data, str):
+        import json
+        script_data = json.loads(script_data)
+
+    if not isinstance(script_data, dict) or "slides" not in script_data:
+        raise HTTPException(500, "El LLM no devolvió un JSON válido con 'slides'.")
 
     # 2. Para cada slide genera imágenes y compone la diapositiva
     for slide_data in script_data["slides"]:
@@ -137,6 +146,7 @@ async def generate_deck(req: GenerateRequest, request: Request):
             title=slide_data["title"],
             bullets=slide_data["bullets"],
             images=img_urls,
+            notes=req.notes,
         )
 
     # 3. Exporta y devuelve la ruta absoluta
