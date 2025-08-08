@@ -78,7 +78,7 @@ class GenerateRequest(BaseModel):
 # Endpoints
 # ---------------------------------------------------------------------------
 
-@app.get("/.well-known/mcp/manifest.yaml", methods=["GET", "HEAD"])
+@app.api_route("/.well-known/mcp/manifest.yaml", methods=["GET", "HEAD"])
 def manifest():
     return FileResponse("manifest.yaml", media_type="text/yaml")
 
