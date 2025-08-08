@@ -28,7 +28,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from tools import scripts, images, slides
-from utils import slugify
+from utils.slugify import slugify
 
 # ---------------------------------------------------------------------------
 # Registro dinámico de herramientas a partir del manifest.yaml
