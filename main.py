@@ -22,12 +22,13 @@ import os
 from pathlib import Path
 from typing import Any, Callable, Dict, Mapping
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from tools import scripts, images, slides
+from utils import slugify
 
 # ---------------------------------------------------------------------------
 # Registro dinámico de herramientas a partir del manifest.yaml
@@ -41,6 +42,7 @@ TOOLS: Mapping[str, Callable[..., Any]] = {
     "export_pptx": slides.export_pptx,
 }
 
+SLIDES_DIR = Path("slides")
 
 # ---------------------------------------------------------------------------
 # FastAPI App
@@ -88,6 +90,21 @@ def manifest():
     return FileResponse("manifest.yaml", media_type="text/yaml")
 
 
+@app.get("/download/{filename}")
+def download(filename: str):
+    fp = (SLIDES_DIR / filename).resolve()
+    if not str(fp).startswith(str(SLIDES_DIR.resolve())):
+        raise HTTPException(400, "Ruta inválida")
+    if not fp.exists():
+        raise HTTPException(404, "Archivo no encontrado")
+
+    return FileResponse(
+        fp,
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        filename=fp.name,
+    )
+
+
 @app.post("/mcp")
 def mcp_rpc(req: RPCReq):
     if req.jsonrpc != "2.0":
@@ -105,7 +122,7 @@ def mcp_rpc(req: RPCReq):
 
 
 @app.post("/generate")
-async def generate_deck(req: GenerateRequest):
+async def generate_deck(req: GenerateRequest, request: Request):
     """Pipeline alto nivel: genera toda la presentación y entrega la ruta."""
     # 1. Guion con el LLM
     script_data = scripts.write_script(req.topic, req.slides, req.tone)
@@ -123,10 +140,17 @@ async def generate_deck(req: GenerateRequest):
         )
 
     # 3. Exporta y devuelve la ruta absoluta
-    filename = f"{req.topic.replace(' ', '')}.pptx"
-    file_path = slides.export_pptx(filename)
+    base = req.filename or slugify(req.topic)
+    fname = f"{base}.pptx"
+    file_path = slides.export_pptx(str(SLIDES_DIR / fname))
 
-    return {"file": file_path}
+    download_url = str(request.url_for("download", filename=Path(file_path).name))
+    return {
+        "file": file_path,
+        "url": download_url,
+        "slides": len(script_data["slides"]),
+        "topic": script_data.get("topic", req.topic),
+    }
 
 
 # Punto de entrada conveniente: `python main.py`
