@@ -152,7 +152,7 @@ async def generate_deck(req: GenerateRequest, request: Request):
     # 3. Exporta y devuelve la ruta absoluta
     base = req.filename or slugify(req.topic)
     fname = f"{base}.pptx"
-    file_path = slides.export_pptx(str(SLIDES_DIR / fname))
+    file_path = slides.export_pptx(fname)
 
     download_url = str(request.url_for("download", filename=Path(file_path).name))
     return {
