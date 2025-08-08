@@ -73,6 +73,11 @@ class GenerateRequest(BaseModel):
     tone: str = Field(default="neutral", example="inspirador")
     images_per_slide: int = Field(default=1, ge=0, le=4)
 
+class RPCReq(BaseModel):
+    jsonrpc: str
+    id: int | str
+    method: str
+    params: Dict[str, Any] = {}
 
 # ---------------------------------------------------------------------------
 # Endpoints
@@ -82,20 +87,21 @@ class GenerateRequest(BaseModel):
 def manifest():
     return FileResponse("manifest.yaml", media_type="text/yaml")
 
+
 @app.post("/mcp")
-async def mcp_router(payload: MCPRequest):
-    """Endpoint genérico MCP → ejecuta la herramienta solicitada."""
-    if payload.tool not in TOOLS:
-        raise HTTPException(400, f"Tool desconocida: {payload.tool}")
-
+def mcp_rpc(req: RPCReq):
+    if req.jsonrpc != "2.0":
+        raise HTTPException(400, "jsonrpc must be '2.0'")
+    if req.method not in TOOLS:
+        raise HTTPException(400, f"Unknown method {req.method}")
     try:
-        result = TOOLS[payload.tool](**payload.args)
-    except TypeError as exc:
-        raise HTTPException(400, f"Argumentos inválidos: {exc}")
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(500, f"Error al ejecutar {payload.tool}: {exc}")
-
-    return {"tool": payload.tool, "return": result}
+        result = TOOLS[req.method](**req.params)
+    except TypeError as e:
+        raise HTTPException(400, f"Bad params: {e}")
+    except Exception as e:
+        # error estándar JSON-RPC
+        return {"jsonrpc":"2.0","id":req.id,"error":{"code":-32000,"message":str(e)}}
+    return {"jsonrpc":"2.0","id":req.id,"result":result}
 
 
 @app.post("/generate")
