@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Mapping
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -76,6 +77,10 @@ class GenerateRequest(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+@app.get("/.well-known/mcp/manifest.yaml")
+def manifest():
+    return FileResponse("manifest.yaml", media_type="text/yaml")
 
 @app.post("/mcp")
 async def mcp_router(payload: MCPRequest):
