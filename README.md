@@ -7,7 +7,7 @@ AutoSlides MCP es una herramienta que crea presentaciones PowerPoint (.pptx) a p
 
 Estructura del proyecto
 -----------------------
-´´´text
+´´´
 - main.py                → Runtime principal con API FastAPI.
 - manifest.yaml          → Especificación de herramientas y parámetros (JSON-RPC).
 - requirements.txt       → Dependencias Python.
@@ -19,7 +19,7 @@ Estructura del proyecto
     └─ __init__.py
 - utils/
     └─ slugify.py        → Convierte títulos en nombres de archivo seguros.
-  text```
+  ```
 
 Cómo funciona
 -------------
