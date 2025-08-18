@@ -163,6 +163,10 @@ _deck = _Deck()
 def create_slide(title: str, bullets: List[str], images: List[str] | None = None, notes: str | None = None) -> None:
     _deck.add_bullet_slide(title, bullets, images, notes)
 
+def reset_deck() -> None:
+    global _deck
+    _deck = _Deck()
+
 
 def export_pptx(filename: str | None = None) -> str:
     return _deck.save(filename)

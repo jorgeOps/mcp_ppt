@@ -127,6 +127,8 @@ def mcp_rpc(req: RPCReq):
 @app.post("/generate")
 async def generate_deck(req: GenerateRequest, request: Request):
     """Pipeline alto nivel: genera toda la presentación y entrega la ruta."""
+    slides.reset_deck()
+    
     # 1. Guion con el LLM
     script_data = scripts.write_script(req.topic, req.slides, req.tone)
     if isinstance(script_data, str):
