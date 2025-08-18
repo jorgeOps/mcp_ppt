@@ -93,6 +93,11 @@ def manifest():
     return FileResponse("manifest.yaml", media_type="text/yaml")
 
 
+@app.get("/health")
+def health():
+    return {"ok": True}
+
+
 @app.get("/download/{filename}")
 def download(filename: str):
     fp = (SLIDES_DIR / filename).resolve()
