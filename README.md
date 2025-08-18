@@ -19,7 +19,7 @@ Estructura del proyecto
     └─ __init__.py
 - utils/
     └─ slugify.py        → Convierte títulos en nombres de archivo seguros.
-  ```
+  text```
 
 Cómo funciona
 -------------
